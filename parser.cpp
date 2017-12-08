@@ -87,7 +87,7 @@ ParseTree *	Decl(istream* in) {
         return 0;
     }
 
-    //return new DeclStatement(type.GetLinenum(), type == T_INT ? INT_TYPE : STRING_TYPE, ident.GetLexeme());
+    return new DeclStatement(type.GetLinenum(), type == T_INT ? INT_TYPE : STRING_TYPE, ident.GetLexeme());
 
     return 0;
 }

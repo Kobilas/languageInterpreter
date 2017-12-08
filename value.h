@@ -5,7 +5,7 @@
 #include "lexer.h"
 #include "parser.h"
 
-enum Type { INTEGER, STRING, NONE, ERR };
+enum Type {INTEGER, STRING, NONE, ERROR};
 
 class Value {
 protected:
@@ -13,10 +13,18 @@ protected:
     int iValue;
     std::string	sValue;
 public:
-    Value(int i) : type(INTEGER), iValue(i) {}
+    Value(int i) : type(INTEGER), iValue(i), sValue("") {}
     Value(std::string s) : type(STRING), iValue(0), sValue(s) {}
     Value() : type(NONE), iValue(), sValue() {};
-    friend std::ostream& operator<<(std::ostream&os, const Value&y);
+    std::ostream& operator<<(std::ostream&os, const Value&y){
+        if (x.getType() == INTEGER) {
+            os << x.iValue;
+        }
+        else if (x.getType() == STRING) {
+            os << x.sValue;
+        }
+        return os;
+    }
     Value operator +(const Value &l) {
         if (this->type == INTEGER)
             return Value(this->iValue + l.iValue);
@@ -58,13 +66,4 @@ public:
         return sValue;
     }
 };
-inline std::ostream& operator<<(std::ostream& os, const Value& x) {
-    if (x.getType() == INTEGER) {
-        os << x.iValue;
-    }
-    else if (x.getType() == STRING) {
-        os << x.sValue;
-    }
-    return os;
-}
 #endif

@@ -5,10 +5,7 @@ using namespace std;
 
 #include "parser.h"
 #include "lexer.h"
-#include "value.h"
 
-map<string, Value> varMap;
-map<string, Type> typeMap;
 int lineNumber;
 string fileMessage;
 int errorcount = 0;
@@ -28,7 +25,7 @@ void semanticError(int linenum, const string& message) {
     cout << message << endl;
 }
 
-//map<string,Variable> SymbolTable;
+map<string,Value> SymbolTable;
 
 int
 main(int argc, char *argv[])
@@ -59,8 +56,6 @@ main(int argc, char *argv[])
         return 1;
     }
     postOrder(tree);
-
-    //extern map<string,Variable>	symbolTable;
 
     return 0;
 }
