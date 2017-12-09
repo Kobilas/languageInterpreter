@@ -11,15 +11,13 @@ using std::string;
 using std::stoi;
 
 #include "lexer.h"
+#include "value.h"
+#include "typefornode.h"
 
 extern void error(int linenum, const string& message);
-extern map<string, Value> SymbolTable;
+extern void semanticError(int linenum, const string& message);
+extern std::map<string, Value> SymbolTable;
 
-enum TypeForNode {
-    INT_TYPE,
-    STRING_TYPE,
-    ERROR_TYPE
-};
 
 class ParseTree {
     int	linenumber;
@@ -49,9 +47,8 @@ public:
     virtual string GetStringValue() const {
         throw "no string value";
     }
-    virtual void eval() {}
+    virtual Value eval() { return 0; }
 };
-
 class StatementList : public ParseTree {
 public:
     StatementList(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
@@ -88,6 +85,22 @@ public:
     string GetStringValue() const {
         return str;
     }
+    Value eval()
+    {
+        Value toReturn;
+        toReturn.setType(GetType());
+        if (toReturn.getType() == INT_TYPE)
+        {
+            toReturn.setNum(value);
+            return toReturn;
+        }
+        else if (toReturn.getType() == STRING_TYPE)
+        {
+            toReturn.setString(str);
+            return toReturn;
+        }
+        return 0;
+    }
 };
 
 class Subtraction : public ParseTree {
@@ -96,11 +109,17 @@ public:
     int value;
     TypeForNode toe;
     Subtraction(int line, ParseTree *para1, ParseTree *para2) : ParseTree(line, para1, para2) {
-        toe = para1->GetType();
-        if (toe == INT_TYPE) {
+        TypeForNode ty1 = para1->GetType();
+        TypeForNode ty2 = para2->GetType();
+        if ((ty1 == INT_TYPE) && (ty2 == INT_TYPE))
+        {
             value1 = para1->GetIntValue();
             value2 = para2->GetIntValue();
             value = value1 - value2;
+        }
+        else
+        {
+            semanticError(line, "type error");
         }
     }
     TypeForNode GetType() const {
@@ -108,6 +127,17 @@ public:
     }
     int GetIntValue() const {
         return value;
+    }
+    Value eval()
+    {
+        Value toReturn;
+        toReturn.setType(GetType());
+        if (toReturn.getType() == INT_TYPE)
+        {
+            toReturn.setNum(value);
+            return toReturn;
+        }
+        return 0;
     }
 };
 
@@ -129,7 +159,8 @@ public:
             toe = STRING_TYPE;
         }
         else {
-            toe = STRING_TYPE;
+            toe = ERROR_TYPE;
+            semanticError(getLineNumber(), "type error");
         }
         if (toe == INT_TYPE && ty1 == ty2) {
             value1 = para1->GetIntValue();
@@ -151,6 +182,22 @@ public:
     TypeForNode GetType() const { return toe; }
     int GetIntValue() const { return value; }
     string GetStringValue() const { return str; }
+    Value eval()
+    {
+        Value toReturn;
+        toReturn.setType(GetType());
+        if (toReturn.getType() == INT_TYPE)
+        {
+            toReturn.setNum(value);
+            return toReturn;
+        }
+        else if (toReturn.getType() == STRING_TYPE)
+        {
+            toReturn.setString(str);
+            return toReturn;
+        }
+        return 0;
+    }
 };
 
 class Division : public ParseTree {
@@ -191,14 +238,33 @@ public:
 
             }
         }
-
+        else
+        {
+            toe = ERROR_TYPE;
+            semanticError(getLineNumber(), "type error");
+        }
     }
     TypeForNode GetType() const {
         return toe;
     }
     int GetIntValue() const { return value; }
     string GetStringValue() const { return str; }
-
+    Value eval()
+    {
+        Value toReturn;
+        toReturn.setType(GetType());
+        if (toReturn.getType() == INT_TYPE)
+        {
+            toReturn.setNum(value);
+            return toReturn;
+        }
+        else if (toReturn.getType() == STRING_TYPE)
+        {
+            toReturn.setString(str);
+            return toReturn;
+        }
+        return 0;
+    }
 };
 
 class IntegerConstant : public ParseTree {
@@ -211,6 +277,10 @@ public:
 
     TypeForNode GetType() const { return INT_TYPE; }
     int GetIntValue() const { return value; }
+    Value eval()
+    {
+        return Value(value);
+    }
 };
 
 class StringConstant : public ParseTree {
@@ -223,15 +293,70 @@ public:
 
     TypeForNode GetType() const { return STRING_TYPE; }
     string GetStringValue() const { return value; }
+    Value eval()
+    {
+        return Value(value);
+    }
 };
 
+//return new DeclStatement(type.GetLinenum(), type == T_INT ? INT_TYPE : STRING_TYPE, ident.GetLexeme());
+class DeclStatement : public ParseTree {
+private:
+    TypeForNode typeN;
+    string identifier;
+public:
+    DeclStatement(int lineNumber, TypeForNode type, string id) : ParseTree(lineNumber), typeN(type), identifier(id) {}
+    TypeForNode getTypeForNode() { return typeN; }
+    void setTypeForNode(TypeForNode newTypeN) { typeN = newTypeN; }
+    string getIdentifier() { return identifier; }
+    void setIdentifier(string newIdentifier) { identifier = newIdentifier; }
+    Value eval()
+    {
+        SymbolTable[getIdentifier()] = Value();
+        SymbolTable[getIdentifier()].setType(typeN);
+        return SymbolTable[getIdentifier()];
+    }
+};
+//return new SetStatement(st.GetLinenum(), ident.GetLexeme(), ex);
+class SetStatement : public ParseTree {
+private:
+    string identifier;
+public:
+    TypeForNode typeN;
+    int iValue = 0;
+    string sValue = "";
+    SetStatement(int lineNumber, string id, ParseTree *expr) : ParseTree(lineNumber, expr), identifier(id)
+    {
+        typeN = expr->GetType();
+        if (typeN == STRING_TYPE)
+        {
+            sValue = expr->GetStringValue();
+        }
+        else if (typeN == INT_TYPE)
+        {
+            iValue = expr->GetIntValue();
+        }
+    }
+    string getIdentifier() const { return identifier; }
+    void setIdentifier(string newIdentifier) { identifier = newIdentifier; }
+    Value eval()
+    {
+        if (SymbolTable[identifier].getType() == typeN)
+        {
+            SymbolTable[identifier].setNum(iValue);
+            SymbolTable[identifier].setString(sValue);
+            return SymbolTable[identifier];
+        }
+        semanticError(getLineNumber(), "type error");
+        return Value();
+    }
+};
 class PrintValue : public ParseTree {
 public:
     string sval = "";
     int ival;
     bool newLine = false;
     TypeForNode toe;
-
     PrintValue(ParseTree *expr, Token t) : ParseTree(t.GetLinenum(), expr) {
         toe = expr->GetType();
         if (toe == STRING_TYPE) {
@@ -245,36 +370,28 @@ public:
         }
     }
 
-    void eval() {
-        std::cout << sval;
+    Value eval() {
+        if (toe == STRING_TYPE)
+        {
+            std::cout << sval;
+            if (newLine)
+            {
+                std::cout << std::endl;
+            }
+            return Value(sval);
+        }
         if (toe == INT_TYPE) {
             std::cout << ival;
+            if (newLine)
+            {
+                std::cout << std::endl;
+            }
+            return Value(ival);
         }
-        if (newLine) {
-            std::cout << std::endl;
-        }
+        return Value();
     }
 
 };
-//return new DeclStatement(type.GetLinenum(), type == T_INT ? INT_TYPE : STRING_TYPE, ident.GetLexeme());
-class DeclStatement: public ParseTree{
-private:
-    TypeForNode type;
-    string identifier;
-public:
-    DeclStatement(int lineN, TypeForNode ty, string id): ParseTree(lineN), type(ty), identifier(id){
-        SymbolTable[identifier] = Value(type);
-    }
-};
-
-class SetValue : public ParseTree {
-public:
-    SetValue(int line, ParseTree *expr) : ParseTree(line, expr) {
-
-    }
-
-};
-
 class Integer : public ParseTree {
     string name;
 public:
@@ -301,9 +418,20 @@ public:
 
 };
 
-class Id : public ParseTree {
+class Identifier : public ParseTree {
+private:
+    string id;
+    string sValue = "";
+    int iValue = 0;
 public:
-    Id(Token t) : ParseTree(t.GetLinenum()) {
+    Identifier(Token t) : ParseTree(t.GetLinenum()), id(t.GetLexeme())
+    {
+        sValue = SymbolTable[id].getString();
+        iValue = SymbolTable[id].getNum();
+    }
+    Value eval()
+    {
+        return SymbolTable[id];
     }
 };
 

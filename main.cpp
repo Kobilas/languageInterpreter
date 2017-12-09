@@ -1,10 +1,12 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <map>
 using namespace std;
 
 #include "parser.h"
 #include "lexer.h"
+#include "value.h"
 
 int lineNumber;
 string fileMessage;
@@ -15,17 +17,18 @@ void messageStart(int linenum) {
 }
 
 void error(int linenum, const string& message) {
-    ++errorcount;
+    errorcount++;
     messageStart(linenum);
     cout << "Syntax error " << message << endl;
 }
 
 void semanticError(int linenum, const string& message) {
+    errorcount++;
     messageStart(linenum);
     cout << message << endl;
 }
 
-map<string,Value> SymbolTable;
+map<string, Value> SymbolTable;
 
 int
 main(int argc, char *argv[])
@@ -52,7 +55,6 @@ main(int argc, char *argv[])
     ParseTree *tree = Prog(in);
 
     if (tree == 0 || errorcount > 0) {
-        // there was some kind of parse error
         return 1;
     }
     postOrder(tree);

@@ -2,44 +2,48 @@
 #define VALUE_H_
 
 #include <string>
+#include <iostream>
 #include "lexer.h"
 #include "parser.h"
+#include "typefornode.h"
 
-enum Type {INTEGER, STRING, NONE, ERROR};
-
+using std::ostream;
 class Value {
-protected:
-    Type type;
+private:
+    TypeForNode type;
     int iValue;
     std::string	sValue;
 public:
-    Value(int i) : type(INTEGER), iValue(i), sValue("") {}
-    Value(std::string s) : type(STRING), iValue(0), sValue(s) {}
-    Value() : type(NONE), iValue(), sValue() {};
-    std::ostream& operator<<(std::ostream&os, const Value&y){
-        if (x.getType() == INTEGER) {
-            os << x.iValue;
-        }
-        else if (x.getType() == STRING) {
-            os << x.sValue;
-        }
-        return os;
+    Value(TypeForNode t) : type(t), iValue(0), sValue("") {}
+    Value(int i) : type(INT_TYPE), iValue(i), sValue("") {}
+    Value(std::string s) : type(STRING_TYPE), iValue(0), sValue(s) {}
+    Value() : type(ERROR_TYPE), iValue(), sValue() {};
+    /*
+    std::ostream& operator<<(std::ostream& os, Value& y) {
+    if (y.getType() == INT_TYPE) {
+    os << y.getNum();
     }
+    else if (y.getType() == STRING_TYPE) {
+    os << y.getString();
+    }
+    return os;
+    }
+    */
     Value operator +(const Value &l) {
-        if (this->type == INTEGER)
+        if (this->type == INT_TYPE)
             return Value(this->iValue + l.iValue);
-        else if (this->type == STRING)
+        else if (this->type == STRING_TYPE)
             return Value(this->sValue + l.sValue);
     }
     Value operator -(const Value &l) {
         return Value(this->iValue - l.iValue);
     }
     Value operator *(const Value &l) {
-        if (this->type == INTEGER)
+        if (this->type == INT_TYPE)
             return Value(this->iValue*l.iValue);
     }
     bool getValue(int& toChange) {
-        if (type == INTEGER) {
+        if (type == INT_TYPE) {
             toChange = iValue;
             return true;
         }
@@ -47,23 +51,41 @@ public:
             return false;
         }
     }
-    bool getValue(std::string& toChange) {
-        if (type == STRING) {
+    bool getValue(std::string& toChange)
+    {
+        if (type == STRING_TYPE)
+        {
             toChange = sValue;
             return true;
         }
-        else {
+        else
+        {
             return false;
         }
     }
-    Type getType() const {
+    TypeForNode getType() const
+    {
         return type;
     }
-    int getNum()const {
+    void setType(TypeForNode newType)
+    {
+        type = newType;
+    }
+    int getNum() const
+    {
         return iValue;
     }
-    string getString() {
+    void setNum(int newIValue)
+    {
+        iValue = newIValue;
+    }
+    string getString()
+    {
         return sValue;
+    }
+    void setString(string newSValue)
+    {
+        sValue = newSValue;
     }
 };
 #endif

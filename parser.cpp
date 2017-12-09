@@ -86,9 +86,7 @@ ParseTree *	Decl(istream* in) {
         error(ident.GetLinenum(), "semicolon required");
         return 0;
     }
-
     return new DeclStatement(type.GetLinenum(), type == T_INT ? INT_TYPE : STRING_TYPE, ident.GetLexeme());
-
     return 0;
 }
 
@@ -111,8 +109,7 @@ ParseTree *	Set(istream* in) {
         error(ident.GetLinenum(), "semicolon required");
         return 0;
     }
-
-    //return new SetStatement(st.GetLinenum(), ident.GetLexeme(), ex);
+    return new SetStatement(st.GetLinenum(), ident.GetLexeme(), ex);
     return 0;
 }
 
@@ -129,7 +126,6 @@ ParseTree *	Print(istream* in) {
         error(st.GetLinenum(), "semicolon required");
         return 0;
     }
-
     return new PrintValue(ex, st);
     return 0;
 }
@@ -189,9 +185,10 @@ ParseTree *	Primary(istream* in) {
     if (tok == T_SCONST)
         return new StringConstant(tok);
 
-    //if( tok == T_ID )
-    //return new Identifier(tok);
-
+    if (tok == T_ID)
+    {
+        return new Identifier(tok);
+    }
     if (tok == T_LPAREN) {
         ParseTree *ex = Expr(in);
         if (ex == 0) {
