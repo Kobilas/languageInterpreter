@@ -1,65 +1,65 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <map>
 using namespace std;
 
 #include "parser.h"
 #include "lexer.h"
-#include "value.h"
 
 int lineNumber;
 string fileMessage;
 int errorcount = 0;
 
 void messageStart(int linenum) {
-    cout << fileMessage << linenum + 1 << ":";
+	cout << fileMessage << linenum+1 << ":";
 }
 
 void error(int linenum, const string& message) {
-    errorcount++;
-    messageStart(linenum);
-    cout << "Syntax error " << message << endl;
+	++errorcount;
+	messageStart(linenum);
+	cout << "Syntax error " << message << endl;
 }
 
 void semanticError(int linenum, const string& message) {
-    errorcount++;
-    messageStart(linenum);
-    cout << message << endl;
+	messageStart(linenum);
+	cout << message << endl;
 }
 
-map<string, Value> SymbolTable;
+//map<string,Variable> SymbolTable;
 
 int
 main(int argc, char *argv[])
 {
-    ifstream file;
-    istream *in = &cin;
+	ifstream file;
+	istream *in = &cin;
 
-    for (int i = 1; i < argc; i++) {
-        string arg(argv[i]);
-        if (in != &cin) {
-            cout << "TOO MANY FILES" << endl;
-            return 0;
-        }
-        fileMessage = arg + ":";
-        file.open(arg);
-        if (file.is_open() == false) {
-            cout << arg << " FILE NOT FOUND" << endl;
-            return 0;
-        }
+	for( int i=1 ; i < argc; i++ ) {
+		string arg(argv[i]);
+		if( in != &cin ) {
+			cout << "TOO MANY FILES" << endl;
+			return 0;
+		}
+		fileMessage = arg + ":";
+		file.open(arg);
+		if( file.is_open() == false ) {
+			cout << arg << " FILE NOT FOUND" << endl;
+			return 0;
+		}
 
-        in = &file;
-    }
+		in = &file;
+	}
 
-    ParseTree *tree = Prog(in);
+	ParseTree *tree = Prog( in );
 
-    if (tree == 0 || errorcount > 0) {
-        return 1;
-    }
+	if( tree == 0 || errorcount > 0 ) {
+		// there was some kind of parse error
+		return 1;
+	}
     postOrder(tree);
 
-    return 0;
+	//extern map<string,Variable>	symbolTable;
+
+	return 0;
 }
 
 
